@@ -6,6 +6,8 @@ const { Server } = require("socket.io");
 const server = http.createServer(app);
 const io = new Server(server)
 
+const axios = require("axios");
+
 const userSocketMap = {};
 const getAllConnectedClients = (roomId) => {
     return Array.from(io.sockets.adapter.rooms.get(roomId) || []).map(
@@ -28,8 +30,8 @@ io.on("connection", (socket) => {
         clients.forEach(({ socketId }) => {
             io.to(socketId).emit("joined", {
                 clients,
-                username,
-                socketId: socket.id,
+                username, // name of new user
+                socketId: socket.id, // id of new user
             });
         });
     })
@@ -55,6 +57,32 @@ io.on("connection", (socket) => {
 
         delete userSocketMap[socket.id];
         socket.leave();
+    });
+
+    socket.on("execute-code", async ({ roomId, code, language = "javascript" }) => {
+        try {
+            // Call Piston API
+            console.log("heelo from server")
+            const response = await axios.post("https://emkc.org/api/v2/piston/execute", {
+                language,
+                version: "*",
+                files: [
+                    {
+                        content: code,
+                    },
+                ]
+            });
+            const { run } = response.data;
+            const outputText = run.output || run.stdout || run.stderr || "";
+
+            // Send the output back to the room
+            io.to(roomId).emit("code-output", {
+                result: outputText,
+                error: run.stderr,
+            });
+        } catch (err) {
+            io.to(roomId).emit("code-output", { error: err.message });
+        }
     });
 
 })

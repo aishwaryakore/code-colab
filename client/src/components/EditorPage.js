@@ -6,6 +6,7 @@ import { useLocation, useParams, useNavigate, Navigate } from 'react-router-dom'
 import { toast } from "react-hot-toast";
 import { FaSignOutAlt } from "react-icons/fa";
 import { FaRegClipboard } from "react-icons/fa";
+import Terminal from './Terminal'
 
 const EditorPage = () => {
     const [members, setMembers] = useState([])
@@ -150,6 +151,9 @@ const EditorPage = () => {
                             codeRef.current = code;
                         }}
                     />
+                    {socketRef.current  && (
+                        <Terminal socketRef={socketRef} roomId={roomId} codeRef={codeRef} />
+                    )}
                 </div>
             </div>
         </div>
